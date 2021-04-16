@@ -24,7 +24,7 @@ version:
 	sed -i "s/kube-downscaler:.*/kube-downscaler:$(VERSION)/" deploy/*.yaml
 
 docker:
-	@echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
+	@echo ${{ secrets.GITHUB_TOKEN } | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
 	docker build --build-arg "VERSION=$(VERSION)" -t "$(IMAGE):$(TAG)" . --cache-from "$(IMAGE):latest"
 	@echo 'Docker image $(IMAGE):$(TAG) can now be used.'
 
