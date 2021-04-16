@@ -24,6 +24,7 @@ jobs:
         run: |-
           docker build \
             --tag "ghcr.io/$GITHUB_REPOSITORY:$GITHUB_SHA" \
+            --build-arg VERSION="$(GITHUB_SHA)"
             --build-arg GITHUB_SHA="$GITHUB_SHA" \
             --build-arg GITHUB_REF="$GITHUB_REF" \
             .
@@ -31,5 +32,5 @@ jobs:
       # Push the Docker image to Google Container Registry
       - name: Publish
         run: |-
-          docker push "ghcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA"
+          docker push "ghcr.io/$GITHUB_REPOSITORY:$GITHUB_SHA"
 
