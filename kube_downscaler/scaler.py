@@ -99,7 +99,7 @@ def is_stack_deployment(resource: NamespacedAPIObject) -> bool:
 def ignore_resource(resource: NamespacedAPIObject, now: datetime.datetime) -> bool:
     # Ignore deployments managed by stacks, we will downscale the stack instead
     if is_stack_deployment(resource):
-        return True
+        return False
 
     # any value different from "false" will ignore the resource (to be on the safe side)
     if resource.annotations.get(EXCLUDE_ANNOTATION, "false").lower() != "false":
