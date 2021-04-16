@@ -16,4 +16,4 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2.2.2
       - run: pip install poetry
-      - run: make test docker push
+      - run: make install docker push
