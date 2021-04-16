@@ -1,8 +1,8 @@
 .PHONY: test docker push
 
-IMAGE            ?= hjacobs/kube-downscaler
+IMAGE            ?= ghcr.io/rverma-nsl/kube-downscaler
 VERSION          ?= $(shell git describe --tags --always --dirty)
-TAG              ?= $(VERSION)
+TAG              ?= $(GITHUB_SHA)
 
 default: docker
 
@@ -24,7 +24,8 @@ version:
 	sed -i "s/kube-downscaler:.*/kube-downscaler:$(VERSION)/" deploy/*.yaml
 
 docker:
-	docker build --build-arg "VERSION=$(VERSION)" -t "$(IMAGE):$(TAG)" .
+	@echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
+	docker build --build-arg "VERSION=$(VERSION)" -t "$(IMAGE):$(TAG)" . --cache-from "$(IMAGE):latest"
 	@echo 'Docker image $(IMAGE):$(TAG) can now be used.'
 
 push: docker
