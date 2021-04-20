@@ -1,0 +1,4 @@
+deploy:
+  - okteto build -t okteto.dev/kube-downscaler:${OKTETO_GIT_COMMIT} kube-downscaler
+  - kustomize edit set image hjacobs/kube-downscaler=okteto.dev/kube-downscaler:${OKTETO_GIT_COMMIT}
+  - kubectl apply -k deploy
