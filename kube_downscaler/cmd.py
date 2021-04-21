@@ -2,7 +2,14 @@ import argparse
 import os
 
 VALID_RESOURCES = frozenset(
-    ["deployments", "statefulsets", "stacks", "cronjobs", "horizontalpodautoscalers", "rollouts"]
+    [
+        "deployments",
+        "statefulsets",
+        "stacks",
+        "cronjobs",
+        "horizontalpodautoscalers",
+        "rollouts",
+    ]
 )
 
 
