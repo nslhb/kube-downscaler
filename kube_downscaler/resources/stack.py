@@ -6,9 +6,9 @@ class Stack(NamespacedAPIObject, ReplicatedMixin):
 
     """Support the Stack resource (https://github.com/zalando-incubator/stackset-controller)."""
 
-    version = "argoproj.io/v1alpha1"
-    endpoint = "rollouts"
-    kind = "Rollout"
+    version = "zalando.org/v1"
+    endpoint = "stacks"
+    kind = "Stack"
 
     def get_autoscaling_max_replicas(self):
         """Return the Stack's HPA maxReplicas property or None if no autoscaling is configured."""

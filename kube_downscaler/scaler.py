@@ -15,6 +15,7 @@ from pykube.objects import NamespacedAPIObject
 
 from kube_downscaler import helper
 from kube_downscaler.helper import matches_time_spec
+from kube_downscaler.resources.rollout import Rollout
 from kube_downscaler.resources.stack import Stack
 
 ORIGINAL_REPLICAS_ANNOTATION = "downscaler/original-replicas"
@@ -94,6 +95,10 @@ def is_stack_deployment(resource: NamespacedAPIObject) -> bool:
             ):
                 return True
     return False
+
+
+def is_rollout(resource: NamespacedAPIObject) -> bool:
+    return resource.kind == Rollout.kind and resource.version == Rollout.version
 
 
 def ignore_resource(resource: NamespacedAPIObject, now: datetime.datetime) -> bool:

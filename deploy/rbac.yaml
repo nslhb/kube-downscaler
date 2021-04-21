@@ -49,9 +49,11 @@ rules:
   - update
   - patch
 - apiGroups:
-  - zalando.org
+    - zalando.org
+    - argoproj.io
   resources:
-  - stacks
+    - stacks
+    - rollouts
   verbs:
   - get
   - watch
@@ -81,4 +83,3 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: kube-downscaler
-  namespace: default
