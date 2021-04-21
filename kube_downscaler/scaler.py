@@ -28,7 +28,7 @@ UPTIME_ANNOTATION = "downscaler/uptime"
 DOWNTIME_ANNOTATION = "downscaler/downtime"
 DOWNTIME_REPLICAS_ANNOTATION = "downscaler/downtime-replicas"
 
-RESOURCE_CLASSES = [Deployment, StatefulSet, Stack, CronJob, HorizontalPodAutoscaler]
+RESOURCE_CLASSES = [Deployment, StatefulSet, Stack, CronJob, HorizontalPodAutoscaler, Rollout]
 
 TIMESTAMP_FORMATS = [
     "%Y-%m-%dT%H:%M:%SZ",
