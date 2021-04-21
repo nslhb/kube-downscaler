@@ -20,4 +20,5 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - run: pip install poetry
       - run: IMAGE=ghcr.io/$GITHUB_REPOSITORY make test docker push
