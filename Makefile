@@ -24,7 +24,7 @@ version:
 	sed -i "s/kube-downscaler:.*/kube-downscaler:$(VERSION)/" deploy/*.yaml
 
 docker:
-	docker build --build-arg "VERSION=$(VERSION)" -t "$(IMAGE):$(TAG)" .
+	docker buildx build --platform="linux/amd64,linux/arm64,linux/arm" --build-arg "VERSION=$(VERSION)"-t "$(IMAGE):$(TAG)"  --push .
 	@echo 'Docker image $(IMAGE):$(TAG) can now be used.'
 
 push: docker
