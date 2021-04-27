@@ -38,4 +38,4 @@ jobs:
       - name: Install dependencies
         run: make install
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      - run: IMAGE=ghcr.io/$GITHUB_REPOSITORY make lint docker push
+      - run: IMAGE=ghcr.io/$GITHUB_REPOSITORY make lint docker
