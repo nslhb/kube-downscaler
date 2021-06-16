@@ -133,3 +133,35 @@ def create_event(resource, message: str, reason: str, event_type: str, dry_run: 
             return event
         except Exception as e:
             logger.error(f"Could not create event {event.obj}: {e}")
+
+
+def topsort(graph):
+    # degree = [0]*vtx
+    in_degree = {}
+    for node in graph:
+        if node not in in_degree:
+            in_degree[node] = 0
+        for adjnode in graph[node]:
+            if adjnode in in_degree:
+                in_degree[adjnode] += 1
+            else:
+                in_degree[adjnode] = 1
+    
+    # bfs = [i for i in range(vtx) if in_degree[i] == 0]
+    # print(in_degree)
+    bfs = [key for key, value in in_degree.items() if value == 0]
+    # print('initial bfs array', bfs)
+    group = []
+    
+    group.append(bfs.copy())
+    for node in bfs:
+        next_group = []
+        for adjnode in graph[node]:
+            in_degree[adjnode] -= 1
+            if in_degree[adjnode] == 0 and adjnode != '':
+                next_group.append(adjnode)
+                bfs.append(adjnode)
+        if next_group:
+            group.append(next_group)
+    return group
+

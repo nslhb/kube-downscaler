@@ -449,6 +449,14 @@ def autoscale_resources(
         else:
             forced_uptime_for_namespace = False
 
+        # Constructing directed graph
+        nodes = namespace_obj.annotations.get(
+            'pre-req-service'
+        ).split(',')
+        dir_graph = collections.defaultdict(list)
+        for node in nodes:
+            dir_graph[namespace_obj] = node
+        
         for resource in resources:
             autoscale_resource(
                 resource,
