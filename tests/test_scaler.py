@@ -34,7 +34,14 @@ def test_scaler_always_up(monkeypatch):
         elif url == "cronjobs":
             data = {"items": []}
         elif url == "namespaces/ns-1":
-            data = {"metadata": {}}
+            data = {
+                "metadata": {
+                    "name": "tf",
+                    "annotations": {
+                        "pre-req-service": "flux-system, istio-system,argo-rollouts"
+                    },
+                }
+            }
         else:
             raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
 
@@ -94,7 +101,12 @@ def test_scaler_namespace_excluded(monkeypatch):
                 ]
             }
         elif url == "namespaces/default":
-            data = {"metadata": {}}
+            data = {
+                "metadata": {
+                    "name": "istio-system",
+                    "annotations": {"pre-req-service": "logging"},
+                }
+            }
         else:
             raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
 
@@ -167,7 +179,12 @@ def test_scaler_namespace_excluded_regex(monkeypatch):
                 ]
             }
         elif url == "namespaces/default":
-            data = {"metadata": {}}
+            data = {
+                "metadata": {
+                    "name": "istio-system",
+                    "annotations": {"pre-req-service": "logging"},
+                }
+            }
         else:
             raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
 
@@ -243,9 +260,24 @@ def test_scaler_namespace_excluded_via_annotation(monkeypatch):
                 ]
             }
         elif url == "namespaces/ns-1":
-            data = {"metadata": {"annotations": {"downscaler/exclude": "true"}}}
+            data = {
+                "metadata": {
+                    "name": "tf",
+                    "annotations": {
+                        "downscaler/exclude": "true",
+                        "pre-req-service": "flux-system, istio-system,argo-rollouts",
+                    },
+                }
+            }
         elif url == "namespaces/ns-2":
-            data = {"metadata": {}}
+            data = {
+                "metadata": {
+                    "name": "tf",
+                    "annotations": {
+                        "pre-req-service": "",
+                    },
+                }
+            }
         else:
             raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
 
@@ -315,7 +347,14 @@ def test_scaler_down_to(monkeypatch):
                 ]
             }
         elif url == "namespaces/default":
-            data = {"metadata": {}}
+            data = {
+                "metadata": {
+                    "name": "istio-system",
+                    "annotations": {
+                        "pre-req-service": "logging",
+                    },
+                }
+            }
         else:
             raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
 

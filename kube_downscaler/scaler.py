@@ -450,13 +450,25 @@ def autoscale_resources(
             forced_uptime_for_namespace = False
 
         # Constructing directed graph
-        nodes = namespace_obj.annotations.get(
-            'pre-req-service'
-        ).split(',')
-        dir_graph = collections.defaultdict(list)
-        for node in nodes:
-            dir_graph[namespace_obj] = node
+        try:
+            child_node = namespace_obj.name
+        except:
+            child_node = ""
         
+        if child_node:
+            nodes = namespace_obj.annotations.get("pre-req-service", "")
+            nodes = nodes.split(',')
+            nodes = list(filter(None, nodes))
+            print(nodes)
+            dir_graph = collections.defaultdict(list)
+
+            if len(nodes) > 0:
+                for node in nodes:
+                    dir_graph[node] = child_node
+            else:
+                dir_graph[child_node] = ""
+
+
         for resource in resources:
             autoscale_resource(
                 resource,

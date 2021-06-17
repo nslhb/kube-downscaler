@@ -146,22 +146,21 @@ def topsort(graph):
                 in_degree[adjnode] += 1
             else:
                 in_degree[adjnode] = 1
-    
+
     # bfs = [i for i in range(vtx) if in_degree[i] == 0]
     # print(in_degree)
     bfs = [key for key, value in in_degree.items() if value == 0]
     # print('initial bfs array', bfs)
     group = []
-    
+
     group.append(bfs.copy())
     for node in bfs:
         next_group = []
         for adjnode in graph[node]:
             in_degree[adjnode] -= 1
-            if in_degree[adjnode] == 0 and adjnode != '':
+            if in_degree[adjnode] == 0 and adjnode != "":
                 next_group.append(adjnode)
                 bfs.append(adjnode)
         if next_group:
             group.append(next_group)
     return group
-
