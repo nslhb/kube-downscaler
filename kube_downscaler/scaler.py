@@ -28,6 +28,7 @@ UPTIME_ANNOTATION = "downscaler/uptime"
 DOWNTIME_ANNOTATION = "downscaler/downtime"
 DOWNTIME_REPLICAS_ANNOTATION = "downscaler/downtime-replicas"
 
+
 RESOURCE_CLASSES = [
     Deployment,
     StatefulSet,
@@ -389,8 +390,10 @@ def autoscale_resources(
     deployment_time_annotation: Optional[str] = None,
     enable_events: bool = False,
 ):
+    dir_graph = collections.defaultdict(list)
     resources_by_namespace = collections.defaultdict(list)
     for resource in kind.objects(api, namespace=(namespace or pykube.all)):
+
         if resource.name in exclude_names:
             logger.debug(
                 f"{resource.kind} {resource.namespace}/{resource.name} was excluded (name matches exclusion list)"
@@ -398,69 +401,22 @@ def autoscale_resources(
             continue
         resources_by_namespace[resource.namespace].append(resource)
 
+    temp = {}
+
     for current_namespace, resources in sorted(resources_by_namespace.items()):
-
-        if any(
-            [pattern.fullmatch(current_namespace) for pattern in exclude_namespaces]
-        ):
-            logger.debug(
-                f"Namespace {current_namespace} was excluded (exclusion list regex matches)"
-            )
-            continue
-
-        logger.debug(
-            f"Processing {len(resources)} {kind.endpoint} in namespace {current_namespace}.."
-        )
-
-        # Override defaults with (optional) annotations from Namespace
         namespace_obj = Namespace.objects(api).get_by_name(current_namespace)
-
-        excluded = ignore_resource(namespace_obj, now)
-
-        default_uptime_for_namespace = namespace_obj.annotations.get(
-            UPTIME_ANNOTATION, default_uptime
-        )
-        default_downtime_for_namespace = namespace_obj.annotations.get(
-            DOWNTIME_ANNOTATION, default_downtime
-        )
-        default_downtime_replicas_for_namespace = get_annotation_value_as_int(
-            namespace_obj, DOWNTIME_REPLICAS_ANNOTATION
-        )
-        if default_downtime_replicas_for_namespace is None:
-            default_downtime_replicas_for_namespace = downtime_replicas
-
-        upscale_period_for_namespace = namespace_obj.annotations.get(
-            UPSCALE_PERIOD_ANNOTATION, upscale_period
-        )
-        downscale_period_for_namespace = namespace_obj.annotations.get(
-            DOWNSCALE_PERIOD_ANNOTATION, downscale_period
-        )
-        forced_uptime_value_for_namespace = str(
-            namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)
-        )
-        if forced_uptime_value_for_namespace.lower() == "true":
-            forced_uptime_for_namespace = True
-        elif forced_uptime_value_for_namespace.lower() == "false":
-            forced_uptime_for_namespace = False
-        elif forced_uptime_value_for_namespace:
-            forced_uptime_for_namespace = matches_time_spec(
-                now, forced_uptime_value_for_namespace
-            )
-        else:
-            forced_uptime_for_namespace = False
-
-        # Constructing directed graph
+        temp[current_namespace] = resources
+        # Constructing directed graph from namespace metadata
         try:
             child_node = namespace_obj.name
         except:
             child_node = ""
-        
+
         if child_node:
             nodes = namespace_obj.annotations.get("pre-req-service", "")
             nodes = nodes.split(',')
             nodes = list(filter(None, nodes))
             print(nodes)
-            dir_graph = collections.defaultdict(list)
 
             if len(nodes) > 0:
                 for node in nodes:
@@ -468,23 +424,94 @@ def autoscale_resources(
             else:
                 dir_graph[child_node] = ""
 
+    print(temp)
+    # print(type(temp['argo-rollouts']), temp['argo-rollouts'])
 
-        for resource in resources:
-            autoscale_resource(
-                resource,
-                upscale_period_for_namespace,
-                downscale_period_for_namespace,
-                default_uptime_for_namespace,
-                default_downtime_for_namespace,
-                forced_uptime_for_namespace,
-                dry_run,
-                now,
-                grace_period,
-                default_downtime_replicas_for_namespace,
-                namespace_excluded=excluded,
-                deployment_time_annotation=deployment_time_annotation,
-                enable_events=enable_events,
+    for key, val in sorted(resources_by_namespace.items()):
+        print(key, '==>')
+        for v in val:
+            print('\t', type(v), v)
+
+    print(dir_graph)
+    sorted_list = helper.topsort(dir_graph)
+    print()
+    print(sorted_list)
+    # [[], []]
+    for a in sorted_list:
+        for current_namespace in a:
+            resources = temp.get(current_namespace)
+            print(resources)
+            if resources is None:
+                continue
+
+            if any(
+                [pattern.fullmatch(current_namespace) for pattern in exclude_namespaces]
+            ):
+                logger.debug(
+                    f"Namespace {current_namespace} was excluded (exclusion list regex matches)"
+                )
+                continue
+
+            logger.debug(
+                f"Processing {len(resources)} {kind.endpoint} in namespace {current_namespace}.."
             )
+
+            # Override defaults with (optional) annotations from Namespace
+            namespace_obj = Namespace.objects(api).get_by_name(current_namespace)
+
+            excluded = ignore_resource(namespace_obj, now)
+
+            default_uptime_for_namespace = namespace_obj.annotations.get(
+                UPTIME_ANNOTATION, default_uptime
+            )
+            default_downtime_for_namespace = namespace_obj.annotations.get(
+                DOWNTIME_ANNOTATION, default_downtime
+            )
+            default_downtime_replicas_for_namespace = get_annotation_value_as_int(
+                namespace_obj, DOWNTIME_REPLICAS_ANNOTATION
+            )
+            if default_downtime_replicas_for_namespace is None:
+                default_downtime_replicas_for_namespace = downtime_replicas
+
+            upscale_period_for_namespace = namespace_obj.annotations.get(
+                UPSCALE_PERIOD_ANNOTATION, upscale_period
+            )
+            downscale_period_for_namespace = namespace_obj.annotations.get(
+                DOWNSCALE_PERIOD_ANNOTATION, downscale_period
+            )
+            forced_uptime_value_for_namespace = str(
+                namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)
+            )
+            if forced_uptime_value_for_namespace.lower() == "true":
+                forced_uptime_for_namespace = True
+            elif forced_uptime_value_for_namespace.lower() == "false":
+                forced_uptime_for_namespace = False
+            elif forced_uptime_value_for_namespace:
+                forced_uptime_for_namespace = matches_time_spec(
+                    now, forced_uptime_value_for_namespace
+                )
+            else:
+                forced_uptime_for_namespace = False
+
+
+            for resource in resources:
+                autoscale_resource(
+                    resource,
+                    upscale_period_for_namespace,
+                    downscale_period_for_namespace,
+                    default_uptime_for_namespace,
+                    default_downtime_for_namespace,
+                    forced_uptime_for_namespace,
+                    dry_run,
+                    now,
+                    grace_period,
+                    default_downtime_replicas_for_namespace,
+                    namespace_excluded=excluded,
+                    deployment_time_annotation=deployment_time_annotation,
+                    enable_events=enable_events,
+                )
+
+    
 
 
 def scale(
