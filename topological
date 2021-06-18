@@ -1,0 +1,14 @@
+def toposort(g,vertex):
+    degree = [0]*vertex
+    for node in g:
+        for adjnode in g[node]:
+            degree[adjnode]+=1
+
+            
+    bfs = [i for i in range(vertex) if degree[i] == 0]
+    for node in bfs:
+        for adjnode in g[node]:
+            degree[adjnode]-=1
+            if degree[adjnode] == 0:
+                bfs.append(adjnode)
+    return bfs
