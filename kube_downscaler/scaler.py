@@ -371,6 +371,66 @@ def autoscale_resource(
             f"Failed to process {resource.kind} {resource.namespace}/{resource.name}: {e}"
         )
 
+def custom_scale_down(
+    resource: NamespacedAPIObject,
+    upscale_period: str,
+    downscale_period: str,
+    default_uptime: str,
+    default_downtime: str,
+    forced_uptime: bool,
+    dry_run: bool,
+    now: datetime.datetime,
+    grace_period: int = 0,
+    downtime_replicas: int = 0,
+    namespace_excluded=False,
+    deployment_time_annotation: Optional[str] = None,
+    enable_events: bool = False,
+):
+    try:
+        exclude = namespace_excluded or ignore_resource(resource, now)
+        original_replicas = get_annotation_value_as_int(
+            resource, ORIGINAL_REPLICAS_ANNOTATION
+        )
+        downtime_replicas_from_annotation = get_annotation_value_as_int(
+            resource, DOWNTIME_REPLICAS_ANNOTATION
+        )
+        if downtime_replicas_from_annotation is not None:
+            downtime_replicas = downtime_replicas_from_annotation
+
+            replicas = get_replicas(resource, original_replicas, uptime=None)
+            update_needed = False
+
+            if (replicas > 0 and replicas > downtime_replicas):
+                if within_grace_period(
+                    resource, grace_period, now, deployment_time_annotation
+                ):
+                    logger.info(
+                        f"{resource.kind} {resource.namespace}/{resource.name} within grace period ({grace_period}s), not scaling down (yet)"
+                    )
+                else:
+                    scale_down(
+                        resource,
+                        replicas,
+                        downtime_replicas,
+                        uptime=None,
+                        downtime=None,
+                        dry_run=dry_run,
+                        enable_events=enable_events,
+                    )
+                    update_needed = True
+
+            if update_needed:
+                if dry_run:
+                    logger.info(
+                        f"**DRY-RUN**: would update {resource.kind} {resource.namespace}/{resource.name}"
+                    )
+                else:
+                    resource.update()
+    except Exception as e:
+        logger.exception(
+            f"Failed to process {resource.kind} {resource.namespace}/{resource.name}: {e}"
+        )
+
 
 def autoscale_resources(
     api,
@@ -456,6 +516,13 @@ def autoscale_resources(
                 f"Processing {len(resources)} {kind.endpoint} in namespace {current_namespace}.."
             )
 
+            #
+            # original_replicas = get_annotation_value_as_int(
+            #    resource, ORIGINAL_REPLICAS_ANNOTATION
+            # ) 
+            # resource.obj["spec"]["minReplicas"] = 0
+            # continue 
+
             # Override defaults with (optional) annotations from Namespace
             namespace_obj = Namespace.objects(api).get_by_name(current_namespace)
 
@@ -495,7 +562,7 @@ def autoscale_resources(
 
 
             for resource in resources:
-                autoscale_resource(
+                custom_scale_down(
                     resource,
                     upscale_period_for_namespace,
                     downscale_period_for_namespace,
